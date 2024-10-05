@@ -1,0 +1,19 @@
+﻿@model asp_empty.Models.Question
+@{
+    ViewBag.Title = "Quiz";
+    int questionIndex = ViewBag.QuestionIndex;
+}
+
+<h2>@Model.Text</h2>
+
+<form asp-action="SubmitAnswer" method="post">
+    <input type="hidden" name="questionIndex" value="@questionIndex" />
+    @for (int i = 0; i < Model.Answers.Count; i++)
+    {
+        <div>
+            <input type="radio" name="selectedAnswer" value="@i" id="answer_@i" />
+            <label for="answer_@i">@Model.Answers[i]</label>
+        </div>
+    }
+    <button type="submit" class="btn btn-primary">Next</button>
+</form>
