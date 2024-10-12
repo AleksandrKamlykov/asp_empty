@@ -5,18 +5,41 @@ namespace _12_10_24.ViewComponents
 {
     public class ImageGalleryViewComponent : ViewComponent
     {
+        private readonly IWebHostEnvironment _env;
+
+        public ImageGalleryViewComponent(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         public IViewComponentResult Invoke()
         {
-            var images = new List<Image>
-            {
-                new Image { Title = "Surface Abstract 1", Description = "Description 1", FilePath = "/images/Surface Abstract_1.png" },
-                new Image { Title = "Surface Abstract 2", Description = "Description 2", FilePath = "/images/Surface Abstract_2.png" },
-                new Image { Title = "Surface Abstract 3", Description = "Description 3", FilePath = "/images/Surface Abstract_3.png" },
-                new Image { Title = "Surface Abstract 3", Description = "Description 3", FilePath = "/images/Surface Abstract_4.png" }
-
-            };
-
+            var images = GetImagesFromDirectory();
             return View(images);
+        }
+
+        private List<Image> GetImagesFromDirectory()
+        {
+            var images = new List<Image>();
+            var imagesPath = Path.Combine(_env.WebRootPath, "images");
+
+            if (Directory.Exists(imagesPath))
+            {
+                var imageFiles = Directory.GetFiles(imagesPath);
+
+                foreach (var imageFile in imageFiles)
+                {
+                    var fileName = Path.GetFileName(imageFile);
+                    images.Add(new Image
+                    {
+                        Title = Path.GetFileNameWithoutExtension(fileName),
+                        Description = "Description for " + fileName,
+                        FilePath = "/images/" + fileName
+                    });
+                }
+            }
+
+            return images;
         }
     }
 }
