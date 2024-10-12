@@ -1,0 +1,31 @@
+﻿@model IEnumerable<Image>
+
+<div class="image-gallery">
+    @foreach (var image in Model)
+    {
+        <div class="image-item">
+            <img src="@image.FilePath" alt="@image.Title" />
+            <h3>@image.Title</h3>
+            <p>@image.Description</p>
+        </div>
+    }
+</div>
+
+<style>
+    .image-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap:10%
+    }
+    .image-item {
+        margin: 10px;
+        text-align: center;
+        max-width: 40%;
+
+    }
+    .image-item img {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
