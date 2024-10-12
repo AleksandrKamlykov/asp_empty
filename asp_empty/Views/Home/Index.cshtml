@@ -1,19 +1,88 @@
-﻿@model asp_empty.Models.Question
-@{
-    ViewBag.Title = "Quiz";
-    int questionIndex = ViewBag.QuestionIndex;
+﻿@{
+    ViewBag.Title = "Все пользователи";
 }
 
-<h2>@Model.Text</h2>
 
-<form asp-action="SubmitAnswer" method="post">
-    <input type="hidden" name="questionIndex" value="@questionIndex" />
-    @for (int i = 0; i < Model.Answers.Count; i++)
-    {
-        <div>
-            <input type="radio" name="selectedAnswer" value="@i" id="answer_@i" />
-            <label for="answer_@i">@Model.Answers[i]</label>
-        </div>
-    }
-    <button type="submit" class="btn btn-primary">Next</button>
+<a asp-action="Create" class="btn btn-primary">Добавить пользователя</a>
+
+
+<form method="get">
+    <div class="form-inline">
+        <label>Имя: </label>
+        <input name="name" value="@Model.FilterViewModel.SelectedName" class="form-control" />
+
+
+        <label>Компания: </label>
+        <select name="company" asp-items="Model.FilterViewModel.Companies" class="form-control"></select>
+
+
+        <input type="submit" value="Фильтр" class="btn btn-outline-dark" />
+    </div>
 </form>
+
+
+<div class="col p-3"></div>
+<div class="row">
+    <table class="table">
+        <tr>
+            <td>
+                <a asp-action="Index"
+                   asp-route-sortOrder="@(Model.SortViewModel.NameSort)"
+                   asp-route-name="@(Model.FilterViewModel.SelectedName)"
+                   asp-route-company="@(Model.FilterViewModel.SelectedCompany)">Имя</a>
+            </td>
+            <td>
+                <a asp-action="Index" asp-route-sortOrder="@(Model.SortViewModel.AgeSort)"
+                   asp-route-name="@(Model.FilterViewModel.SelectedName)"
+                   asp-route-company="@(Model.FilterViewModel.SelectedCompany)">Возраст</a>
+            </td>
+            <td>
+                <a asp-action="Index" asp-route-sortOrder="@(Model.SortViewModel.CompanySort)"
+                   asp-route-name="@(Model.FilterViewModel.SelectedName)"
+                   asp-route-company="@(Model.FilterViewModel.SelectedCompany)">Компания</a>
+            </td>
+        </tr>
+        @foreach (var item in Model.Users)
+
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Age</td>
+                <td>@item.Company?.Name</td>
+                <td>
+                    <a asp-action="Details" asp-controller="Home" asp-route-id="@item.Id">Подробнее</a> |
+                    <a asp-action="Edit" asp-controller="Home" asp-route-id="@item.Id">Изменить</a> |
+                    <a asp-action="Delete" asp-controller="Home" asp-route-id="@item.Id">Удалить</a>
+                </td>
+            </tr>
+        }
+    </table>
+</div>
+
+
+@if (Model.PageViewModel.HasPreviousPage)
+
+{
+    <a asp-action="Index"
+       asp-route-page="@(Model.PageViewModel.PageNumber - 1)"
+       asp-route-name="@(Model.FilterViewModel.SelectedName)"
+       asp-route-company="@(Model.FilterViewModel.SelectedCompany)"
+       asp-route-sortorder="@(Model.SortViewModel.Current)"
+       class="btn  btn-outline-dark">
+        <i class="glyphicon glyphicon-chevron-left"></i>
+        Назад
+    </a>
+}
+@if (Model.PageViewModel.HasNextPage)
+
+{
+    <a asp-action="Index"
+       asp-route-page="@(Model.PageViewModel.PageNumber + 1)"
+       asp-route-name="@(Model.FilterViewModel.SelectedName)"
+       asp-route-company="@(Model.FilterViewModel.SelectedCompany)"
+       asp-route-sortorder="@(Model.SortViewModel.Current)"
+       class="btn btn-outline-dark">
+        Вперед
+        <i class="glyphicon glyphicon-chevron-right"></i>
+    </a>
+}

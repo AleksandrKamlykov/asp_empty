@@ -1,48 +1,154 @@
 ﻿using asp_empty.Models;
+using asp_empty.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using asp_empty.ViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace asp_empty.Controllers
 {
     public class HomeController : Controller
     {
-        private static readonly List<Question> Questions = new List<Question>
-        {
-            new Question { Id = 1, Text = "What is the capital of Great Britan?", Answers = new List<string> { "Berlin", "Madrid", "London", "Rome" }, CorrectAnswerIndex = 2 },
-            new Question { Id = 2, Text = "What is 2 + 2?", Answers = new List<string> { "3", "4", "5", "6" }, CorrectAnswerIndex = 1 },
-        };
+        private readonly DataBase _context;
 
-        public IActionResult Index(int questionIndex = 0)
+        public HomeController(DataBase db)
         {
-            if (questionIndex >= Questions.Count)
+            _context = db;
+        }
+
+        public async Task<IActionResult> Index(int? company, string name, int page = 1, SortState sortOrder = SortState.NameAsc)
+        {
+            int pageSize = 3;
+
+            //фильтрация
+            IQueryable<User> users = _context.Users.Include(x => x.Company);
+
+            if (company != null && company != 0)
             {
-                return RedirectToAction("Result");
+                users = users.Where(p => p.CompanyId == company);
+            }
+            if (!String.IsNullOrEmpty(name))
+            {
+                users = users.Where(p => p.Name.Contains(name));
             }
 
-            ViewBag.QuestionIndex = questionIndex;
-            return View(Questions[questionIndex]);
+            // сортировка
+            switch (sortOrder)
+            {
+                case SortState.NameDesc:
+                    users = users.OrderByDescending(s => s.Name);
+                    break;
+                case SortState.AgeAsc:
+                    users = users.OrderBy(s => s.Age);
+                    break;
+                case SortState.AgeDesc:
+                    users = users.OrderByDescending(s => s.Age);
+                    break;
+                case SortState.CompanyAsc:
+                    users = users.OrderBy(s => s.Company.Name);
+                    break;
+                case SortState.CompanyDesc:
+                    users = users.OrderByDescending(s => s.Company.Name);
+                    break;
+                default:
+                    users = users.OrderBy(s => s.Name);
+                    break;
+            }
+
+            // пагинация
+            var count = await users.CountAsync();
+            var items = await users.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            // формируем модель представления
+            IndexViewModel viewModel = new IndexViewModel
+            {
+                PageViewModel = new PageViewModel(count, page, pageSize),
+                SortViewModel = new SortViewModel(sortOrder),
+                FilterViewModel = new FilterViewModel(_context.Companies.ToList(), company, name),
+                Users = items
+            };
+            return View(viewModel);
+        }
+        public async Task<IActionResult> Create()
+        {
+
+            ViewBag.Companies = await _context.Companies.ToListAsync();
+
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Create(User user)
+        {
+            
+                _context.Add(user);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index");
+            
+        }
+        [HttpGet]
+        [ActionName("Delete")]
+        public async Task<IActionResult> ConfirmDelete(int? id)
+        {
+            if (id != null)
+            {
+                var currentUser = await _context.Users.FirstOrDefaultAsync(p => p.Id == id);
+                if (currentUser != null)
+                {
+                    return View(currentUser);
+                }
+            }
+            return NotFound();
         }
 
         [HttpPost]
-        public IActionResult SubmitAnswer(int questionIndex, int selectedAnswer)
+        public async Task<IActionResult> Delete(int? id)
         {
-            if (questionIndex < Questions.Count)
+            if (id != null)
             {
-                var question = Questions[questionIndex];
-                if (selectedAnswer == question.CorrectAnswerIndex)
+                var currentUser = await _context.Users.FirstOrDefaultAsync(p => p.Id == id);
+                if (currentUser != null)
                 {
-                    TempData["Score"] = (int)(TempData["Score"] ?? 0) + 1;
+                    _context.Users.Remove(currentUser);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
             }
-
-            return RedirectToAction("Index", new { questionIndex = questionIndex + 1 });
+            return NotFound();
         }
-
-        public IActionResult Result()
+        public async Task<IActionResult> Edit(int? id)
         {
-            ViewBag.Score = TempData["Score"] ?? 0;
-            ViewBag.TotalQuestions = Questions.Count;
-            return View();
+            if (id != null)
+            {
+                var currentUser = await _context.Users.FirstOrDefaultAsync(p => p.Id == id);
+                if (currentUser != null)
+                {
+                    ViewBag.Companies = await _context.Companies.ToListAsync();
+
+                    return View(currentUser);
+                }
+            }
+            return NotFound();
         }
+        [HttpPost]
+        public async Task<IActionResult> Edit(User user)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id != null)
+            {
+                var currentUser = await _context.Users.FirstOrDefaultAsync(p => p.Id == id);
+                if (currentUser != null)
+                {
+                    return View(currentUser);
+                }
+            }
+            return NotFound();
+        }
+
     }
 }
